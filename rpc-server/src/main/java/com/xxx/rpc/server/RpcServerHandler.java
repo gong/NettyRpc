@@ -61,7 +61,7 @@ public class RpcServerHandler extends SimpleChannelInboundHandler<RpcRequest> {
         String methodName = request.getMethodName();
         Class<?>[] parameterTypes = request.getParameterTypes();
         Object[] parameters = request.getParameters();
-        // 执行反射调用
+        // 执行jdk反射调用
 //        Method method = serviceClass.getMethod(methodName, parameterTypes);
 //        method.setAccessible(true);
 //        return method.invoke(serviceBean, parameters);

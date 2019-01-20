@@ -24,7 +24,8 @@ import java.util.Map;
 
 /**
  * RPC 服务器（用于发布 RPC 服务）
- *
+ *实现ApplicationContextAware 表示初始化spring容器时会执行setApplicationContext方法将ApplicationContext注入进来
+ * 实现InitializingBean afterPropertiesSet方法表示资源加载完之后，初始化bean之前执行
  * @author huangyong
  * @since 1.0.0
  */
@@ -80,18 +81,22 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
                 @Override
                 public void initChannel(SocketChannel channel) throws Exception {
                     ChannelPipeline pipeline = channel.pipeline();
-                    pipeline.addLast(new RpcDecoder(RpcRequest.class)); // 解码 RPC 请求
-                    pipeline.addLast(new RpcEncoder(RpcResponse.class)); // 编码 RPC 响应
-                    pipeline.addLast(new RpcServerHandler(handlerMap)); // 处理 RPC 请求
+                    // 解码 RPC 请求
+                    pipeline.addLast(new RpcDecoder(RpcRequest.class));
+                    // 编码 RPC 响应
+                    pipeline.addLast(new RpcEncoder(RpcResponse.class));
+                    // 处理 RPC 请求
+                    pipeline.addLast(new RpcServerHandler(handlerMap));
                 }
             });
+            // socket连接队列长度 太长会导致nginx超时断开连接,太短会导致客户端连接不到nginx报Gate bad way
             bootstrap.option(ChannelOption.SO_BACKLOG, 1024);
             bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
             // 获取 RPC 服务器的 IP 地址与端口号
             String[] addressArray = StringUtil.split(serviceAddress, ":");
             String ip = addressArray[0];
             int port = Integer.parseInt(addressArray[1]);
-            // 启动 RPC 服务器
+            // 启动 RPC 服务器 阻塞直到绑定完成
             ChannelFuture future = bootstrap.bind(ip, port).sync();
             // 注册 RPC 服务地址
             if (serviceRegistry != null) {
