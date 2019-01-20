@@ -1,4 +1,4 @@
-#本仓库最初fork 自https://gitee.com/huangyong/rpc.git
+# 本仓库最初fork 自https://gitee.com/huangyong/rpc.git
 
 # 分布式 RPC 框架 - 使用说明
 
