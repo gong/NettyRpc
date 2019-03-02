@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * RPC 客户端（用于发送 RPC 请求）
- *
+ * 也可以说是netty 客户端，基于netty发送请求的模块
  * @author huangyong
  * @since 1.0.0
  */

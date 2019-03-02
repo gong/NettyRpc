@@ -24,7 +24,7 @@ public @interface RpcService {
     Class<?> value();
 
     /**
-     * 服务版本号
+     * 服务版本号，用于识别同一个接口的不同的实现方法
      */
     String version() default "";
 }
