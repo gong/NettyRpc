@@ -15,6 +15,19 @@ public class RpcRequest {
     private Class<?>[] parameterTypes;
     private Object[] parameters;
 
+    public RpcRequest() {
+    }
+
+    public RpcRequest(String requestId, String interfaceName, String serviceVersion,
+        String methodName, Class<?>[] parameterTypes, Object[] parameters) {
+        this.requestId = requestId;
+        this.interfaceName = interfaceName;
+        this.serviceVersion = serviceVersion;
+        this.methodName = methodName;
+        this.parameterTypes = parameterTypes;
+        this.parameters = parameters;
+    }
+
     public String getRequestId() {
         return requestId;
     }

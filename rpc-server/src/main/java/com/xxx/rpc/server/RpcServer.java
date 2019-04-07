@@ -24,8 +24,8 @@ import java.util.Map;
 
 /**
  * RPC 服务器（用于发布 RPC 服务）
- *实现ApplicationContextAware： 表示初始化spring容器时会执行setApplicationContext方法将ApplicationContext注入进来
- * 实现InitializingBean： afterPropertiesSet方法表示资源加载完之后，初始化bean之前执行
+ *实现ApplicationContextAware： 表示初始化bean时会执行setApplicationContext方法将ApplicationContext注入进来
+ * 实现InitializingBean： 初始化bean之前执行，afterPropertiesSet方法用于添加初始化处理操作
  * @author huangyong
  * @since 1.0.0
  */

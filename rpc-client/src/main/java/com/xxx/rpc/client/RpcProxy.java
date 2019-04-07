@@ -3,7 +3,9 @@ package com.xxx.rpc.client;
 import com.xxx.rpc.common.bean.RpcRequest;
 import com.xxx.rpc.common.bean.RpcResponse;
 import com.xxx.rpc.common.util.StringUtil;
+import com.xxx.rpc.common.util.retry.RetryUtil;
 import com.xxx.rpc.registry.ServiceDiscovery;
+import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,13 +51,8 @@ public class RpcProxy {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                         // 创建 RPC 请求对象并设置请求属性
-                        RpcRequest request = new RpcRequest();
-                        request.setRequestId(UUID.randomUUID().toString());
-                        request.setInterfaceName(method.getDeclaringClass().getName());
-                        request.setServiceVersion(serviceVersion);
-                        request.setMethodName(method.getName());
-                        request.setParameterTypes(method.getParameterTypes());
-                        request.setParameters(args);
+                        RpcRequest request = new RpcRequest(UUID.randomUUID().toString(), method.getDeclaringClass().getName(), serviceVersion,
+                            method.getName(), method.getParameterTypes(), args);
                         // 获取 RPC 服务地址
                         if (serviceDiscovery != null) {
                             String serviceName = interfaceClass.getName();
@@ -72,10 +69,15 @@ public class RpcProxy {
                         String[] array = StringUtil.split(serviceAddress, ":");
                         String host = array[0];
                         int port = Integer.parseInt(array[1]);
-                        // 创建 RPC 客户端对象并发送 RPC 请求
-                        RpcClient client = new RpcClient(host, port);
                         long time = System.currentTimeMillis();
-                        RpcResponse response = client.send(request);
+                        Callable<RpcResponse> callable = () -> {
+                            // 创建 RPC 客户端对象并发送 RPC 请求 需要把创建RPC客户端的代码放在匿名内部类里面
+                            // 否则会导致ClosedChannelException异常，由于netty会在第一次连接后关闭客户端的channel
+                            // 重试连接时需要重新创建RPC 客户端
+                            RpcClient client = new RpcClient(host, port);
+                            LOGGER.info("host:{},port:{}",host,port);
+                            return client.send(request);};
+                        RpcResponse response = RetryUtil.call(callable, 3);
                         LOGGER.debug("time: {}ms", System.currentTimeMillis() - time);
                         if (response == null) {
                             throw new RuntimeException("response is null");

@@ -1,4 +1,5 @@
-import com.xxx.rpc.registry.zookeeper.ZooKeeperServiceDiscovery;
+package com.xxx.rpc.registry.zookeeper;
+
 import org.junit.Test;
 
 import static org.junit.Assert.*;
