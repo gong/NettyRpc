@@ -1,14 +1,20 @@
 package com.xxx.rpc.common.util.retry;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * 重试机制
+ * 首先直接执行callable的call方法
+ * 重试时采用线程池异步执行任务
  */
 public class RetryUtil {
     private static final Logger logger = LoggerFactory.getLogger(RetryUtil.class);
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
     public static <T> T call(Callable<T> callable,int num) {
         try {
             return callable.call();
@@ -21,10 +27,14 @@ public class RetryUtil {
             }
         }
         int i=0;
+
         while (i<num){
             i++;
             try {
-                return callable.call();
+            /*    FutureTask<T> futureTask = new FutureTask<>(callable);
+                executorService.submit(futureTask);
+                return futureTask.get();*/
+               return callable.call();
             } catch (Exception e) {
                 logger.error("重试第{}次",i);
                 logger.info(e.toString());

@@ -4,11 +4,13 @@ import com.xxx.rpc.common.bean.RpcRequest;
 import com.xxx.rpc.common.bean.RpcResponse;
 import com.xxx.rpc.common.codec.RpcDecoder;
 import com.xxx.rpc.common.codec.RpcEncoder;
+import com.xxx.rpc.common.util.SelectTrans;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,12 +46,12 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
     }
 
     public RpcResponse send(RpcRequest request) throws Exception {
-        EventLoopGroup group = new NioEventLoopGroup();
+        EventLoopGroup group = SelectTrans.getEventLoopGroupByOSName();
         try {
             // 创建并初始化 Netty 客户端 Bootstrap 对象
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(group);
-            bootstrap.channel(NioSocketChannel.class);
+            bootstrap.channel(SelectTrans.getClientChannelClassByOS());
             bootstrap.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel channel) throws Exception {
@@ -60,8 +62,9 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
                 }
             });
             bootstrap.option(ChannelOption.TCP_NODELAY, true);
+            bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
             // 连接 RPC 服务器
-            ChannelFuture future = bootstrap.connect(host, port).sync();
+            ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port)).sync();
             // 写入 RPC 请求数据并关闭连接
             Channel channel = future.channel();
             channel.writeAndFlush(request).sync();
@@ -69,7 +72,7 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
             // 返回 RPC 响应对象
             return response;
         } finally {
-            group.shutdownGracefully();
+           // group.shutdownGracefully();
         }
     }
 }

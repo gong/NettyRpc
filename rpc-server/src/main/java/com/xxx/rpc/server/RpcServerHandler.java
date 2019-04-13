@@ -4,6 +4,7 @@ import com.xxx.rpc.common.bean.RpcRequest;
 import com.xxx.rpc.common.bean.RpcResponse;
 import com.xxx.rpc.common.util.StringUtil;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import net.sf.cglib.reflect.FastClass;
@@ -19,6 +20,7 @@ import java.util.Map;
  * @author huangyong
  * @since 1.0.0
  */
+@Sharable
 public class RpcServerHandler extends SimpleChannelInboundHandler<RpcRequest> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcServerHandler.class);

@@ -4,6 +4,7 @@ import com.xxx.rpc.common.bean.RpcRequest;
 import com.xxx.rpc.common.bean.RpcResponse;
 import com.xxx.rpc.common.codec.RpcDecoder;
 import com.xxx.rpc.common.codec.RpcEncoder;
+import com.xxx.rpc.common.util.SelectTrans;
 import com.xxx.rpc.common.util.StringUtil;
 import com.xxx.rpc.registry.ServiceRegistry;
 import io.netty.bootstrap.ServerBootstrap;
@@ -11,6 +12,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import java.net.InetSocketAddress;
 import org.apache.commons.collections4.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,14 +72,15 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = SelectTrans.getEventLoopGroupByOSName();
+        EventLoopGroup workerGroup = SelectTrans.getEventLoopGroupByOSName();
         try {
             // 创建并初始化 Netty 服务端 Bootstrap 对象
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup);
-            bootstrap.channel(NioServerSocketChannel.class);
+            bootstrap.channel(SelectTrans.getServerChannelClassByOS());
             bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
+                private RpcServerHandler rpcServerHandler = new RpcServerHandler(handlerMap);
                 @Override
                 public void initChannel(SocketChannel channel) throws Exception {
                     ChannelPipeline pipeline = channel.pipeline();
@@ -85,8 +88,8 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
                     pipeline.addLast(new RpcDecoder(RpcRequest.class));
                     // 编码 RPC 响应
                     pipeline.addLast(new RpcEncoder(RpcResponse.class));
-                    // 处理 RPC 请求
-                    pipeline.addLast(new RpcServerHandler(handlerMap));
+                    // 处理 RPC 请求 多个请求使用同一个channelHandler
+                    pipeline.addLast(rpcServerHandler);
                 }
             });
             // socket连接队列长度 太长会导致nginx超时断开连接,太短会导致客户端连接不到nginx报Gate bad way
@@ -97,7 +100,7 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
             String ip = addressArray[0];
             int port = Integer.parseInt(addressArray[1]);
             // 启动 RPC 服务器 阻塞直到绑定完成
-            ChannelFuture future = bootstrap.bind(ip, port).sync();
+            ChannelFuture future = bootstrap.bind(new InetSocketAddress(ip, port)).sync();
             // 注册 RPC 服务地址
             if (serviceRegistry != null) {
                 for (String interfaceName : handlerMap.keySet()) {
